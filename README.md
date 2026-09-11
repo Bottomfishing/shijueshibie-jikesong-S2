@@ -7,18 +7,29 @@
 
 ## 快速开始
 
-Windows 用户可以直接双击项目根目录的 **`start-dev.bat`**。脚本会在首次运行时安装依赖，随后启动开发服务器并自动打开浏览器。
+Windows 用户可以直接双击项目根目录的 **`start-dev.bat`** 启动网页端，或双击 **`start-desktop.bat`** 启动桌面端。两个入口使用同一份 `src/` 代码和同一套资源。
 
 也可以在终端中手动启动：
 
 ```bash
 npm install        # postinstall 会自动把 MediaPipe 模型和 wasm 落到 public/
 npm run dev        # 打开 http://localhost:5173
+npm run dev:desktop # 启动 Electron 桌面开发窗口（与网页端共用代码）
 ```
 
 - 首次运行会请求摄像头权限。拒绝或没摄像头也能进：会自动降级成鼠标模式。
 - URL 加 `?input=mouse` 可跳过摄像头直接进。
 - **D** 开关调试面板 · **V** 显示摄像头预览 · **R** 重置体验
+
+### 两种运行方式
+
+| 方式 | 命令 | 说明 |
+|---|---|---|
+| 网页端 | `npm run dev:web` | Vite 开发服务器，浏览器访问 `http://localhost:5173` |
+| 桌面端 | `npm run dev:desktop` | 使用 5174 端口启动本地 Vite，再由 Electron 加载同一页面 |
+| 桌面端产物验证 | `npm run build:desktop` 后 `npm run start:desktop` | 先构建 `dist/`，再由 Electron 加载构建结果 |
+
+开发约定：业务功能只修改 `src/`；`desktop/` 只负责窗口和原生权限；网页端和桌面端都通过同一套 Vite 产物同步更新。
 
 ## 命令
 

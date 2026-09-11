@@ -6,7 +6,11 @@
   "description": "麦浪精灵 - 吉客松 S2 参赛作品 · 主题赛道「没有对话框的产品」",
   "scripts": {
     "dev": "vite",
+    "dev:web": "vite",
+    "dev:desktop": "concurrently -k \"vite --host 127.0.0.1 --port 5174 --strictPort\" \"wait-on http://127.0.0.1:5174 && cross-env WISP_DEV_SERVER=1 WISP_DEV_URL=http://127.0.0.1:5174/?input=mouse electron desktop/main.mjs\"",
     "build": "tsc --noEmit && vite build",
+    "build:desktop": "npm run build",
+    "start:desktop": "electron desktop/main.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "setup:models": "node scripts/setup-models.mjs",
@@ -19,7 +23,11 @@
   },
   "devDependencies": {
     "@types/three": "^0.185.4",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.0.0",
+    "electron": "^38.1.0",
     "typescript": "^5.9.3",
-    "vite": "^7.3.6"
+    "vite": "^7.3.6",
+    "wait-on": "^8.0.4"
   }
 }
