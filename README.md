@@ -14,9 +14,11 @@ Windows 用户可以直接双击项目根目录的 **`start-dev.bat`** 启动网
 ```bash
 npm install        # postinstall 会自动把 MediaPipe 模型和 wasm 落到 public/
 npm run dev        # 打开 http://localhost:5173
-npm run dev:desktop # 启动 Electron 桌面开发窗口（与网页端共用代码）
+npm run dev:web    # 网页端开发（与 dev 等价）
+npm run dev:desktop # Electron 桌面端开发
 ```
 
+- 打开 http://localhost:5173 是进入页（名字未定先占位），点「进入」或按 Enter 跳转体验页 `/app.html`，URL 参数（如 `?input=mouse`）会自动带上。
 - 首次运行会请求摄像头权限。拒绝或没摄像头也能进：会自动降级成鼠标模式。
 - URL 加 `?input=mouse` 可跳过摄像头直接进。
 - **D** 开关调试面板 · **V** 显示摄像头预览 · **R** 重置体验

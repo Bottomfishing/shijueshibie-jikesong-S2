@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>麦浪精灵 · Wisp Field</title>
+    <style>
+      :root {
+        --sky: #f5efe0;
+        --ink: #3a3630;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 100%; height: 100%; overflow: hidden; background: var(--sky); }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        color: var(--ink);
+        -webkit-font-smoothing: antialiased;
+      }
+      #app { position: fixed; inset: 0; }
+      #app canvas { display: block; width: 100%; height: 100%; }
+
+      /* 旁白提示：底部胶囊，主文案 + 操作副文案 */
+      #hint {
+        position: fixed;
+        left: 50%;
+        bottom: 6%;
+        transform: translateX(-50%);
+        max-width: 84vw;
+        padding: 12px 28px;
+        text-align: center;
+        color: rgba(58, 54, 48, 0.9);
+        background: rgba(245, 239, 224, 0.8);
+        border-radius: 18px;
+        box-shadow: 0 2px 14px rgba(58, 54, 48, 0.1);
+        opacity: 0;
+        transition: opacity 0.8s ease;
+        pointer-events: none;
+        z-index: 5;
+      }
+      #hint.visible { opacity: 1; }
+      #hint .hint-main {
+        font-size: 16px;
+        letter-spacing: 0.14em;
+      }
+      #hint .hint-sub {
+        margin-top: 4px;
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        opacity: 0.62;
+      }
+
+      /* 左下角操作表：默认收成一个小徽标，点开才显示完整手势卡。
+         这样既固定在左下角、不挡镜头画面，又符合"作品本体零 UI"——不抢戏、随时可呼出。 */
+      #ops {
+        position: fixed;
+        left: 18px;
+        bottom: 18px;
+        z-index: 5;
+      }
+
+      /* 收起态的徽标：小圆角胶囊 + 手势圆点，半透明融入场景 */
+      #ops .ops-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 9px 14px 9px 12px;
+        font-family: inherit;
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        color: rgba(58, 54, 48, 0.85);
+        background: rgba(245, 239, 224, 0.68);
+        border: 1px solid rgba(58, 54, 48, 0.12);
+        border-radius: 999px;
+        cursor: pointer;
+        box-shadow: 0 2px 14px rgba(58, 54, 48, 0.1);
+        transition: background 0.2s ease, box-shadow 0.2s ease;
+      }
+      #ops .ops-badge:hover {
+        background: rgba(245, 239, 224, 0.9);
+        box-shadow: 0 3px 18px rgba(58, 54, 48, 0.16);
+      }
+      #ops .ops-badge-dot {
+        width: 7px; height: 7px;
+        border-radius: 50%;
+        background: #c0453a; /* 小满同款红，呼应主角 */
+        box-shadow: 0 0 6px rgba(192, 69, 58, 0.5);
+      }
+
+      /* 完整手势卡：默认隐藏，展开时从徽标上方浮出 */
+      #ops .ops-card {
+        position: absolute;
+        left: 0;
+        bottom: calc(100% + 10px);
+        width: min(300px, 62vw);
+        padding: 14px 18px;
+        font-size: 12px;
+        line-height: 1.9;
+        letter-spacing: 0.08em;
+        color: rgba(58, 54, 48, 0.82);
+        background: rgba(245, 239, 224, 0.92);
+        border: 1px solid rgba(58, 54, 48, 0.1);
+        border-radius: 14px;
+        box-shadow: 0 4px 22px rgba(58, 54, 48, 0.16);
+        opacity: 0;
+        transform: translateY(8px);
+        transition: opacity 0.22s ease, transform 0.22s ease;
+        pointer-events: none;
+      }
+      #ops.expanded .ops-card { opacity: 1; transform: translateY(0); pointer-events: auto; }
+      #ops .ops-title {
+        font-size: 11px;
+        letter-spacing: 0.22em;
+        opacity: 0.55;
+        margin-bottom: 6px;
+      }
+      #ops .ops-row b { font-weight: 600; color: rgba(58, 54, 48, 0.95); }
+      #ops .ops-mouse {
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid rgba(58, 54, 48, 0.14);
+        font-size: 11px;
+        opacity: 0.6;
+        line-height: 1.7;
+      }
+
+      /* 摄像头画面：默认显示，按 V 开关。正式演示时要隐藏（作品本体零 UI） */
+      #cam {
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        width: 240px;
+        /* 框体尺寸不依赖视频流：没流/黑屏时也保持 16:9，不会缩成一个点让人以为没渲染 */
+        aspect-ratio: 16 / 9;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #1e1c18;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+        box-shadow: 0 6px 24px rgba(58, 54, 48, 0.18);
+        transform: scaleX(-1); /* 自拍镜像，与操作直觉一致 */
+      }
+      #cam.visible { opacity: 0.9; }
+      #cam video, #cam canvas {
+        position: absolute;
+        inset: 0;
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      /* 没有视频流在播时给出状态提示，别让黑框装神秘 */
+      #cam-hint {
+        position: absolute;
+        inset: 0;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        padding: 8px;
+        font-size: 11px;
+        line-height: 1.5;
+        text-align: center;
+        color: rgba(245, 239, 224, 0.85);
+        background: rgba(30, 28, 24, 0.82);
+        transform: scaleX(-1); /* 抵消容器的镜像，让文字可读 */
+      }
+      #cam:not(.live) #cam-hint { display: flex; }
+
+      /* 启动层：摄像头不可用时给出鼠标兜底入口，避免现场卡死 */
+      #boot {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        background: var(--sky);
+        z-index: 20;
+        transition: opacity 0.6s ease;
+      }
+      #boot.hidden { opacity: 0; pointer-events: none; }
+      #boot h1 { font-size: 20px; font-weight: 500; letter-spacing: 0.08em; }
+      #boot p { font-size: 13px; opacity: 0.6; max-width: 420px; text-align: center; line-height: 1.8; }
+      #boot button {
+        margin-top: 8px;
+        padding: 10px 22px;
+        font-size: 13px;
+        font-family: inherit;
+        color: var(--ink);
+        background: transparent;
+        border: 1px solid rgba(58, 54, 48, 0.25);
+        border-radius: 999px;
+        cursor: pointer;
+        transition: background 0.2s ease;
+      }
+      #boot button:hover { background: rgba(58, 54, 48, 0.06); }
+      #boot .spinner {
+        width: 22px; height: 22px;
+        border: 2px solid rgba(58, 54, 48, 0.15);
+        border-top-color: rgba(58, 54, 48, 0.55);
+        border-radius: 50%;
+        animation: spin 0.9s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      #boot .failed .spinner { display: none; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <!-- 场景内提示：旁白式短句，随剧情淡入淡出 -->
+    <div id="hint"></div>
+
+    <!-- 左侧常驻操作表：当前可用的一切手势 -->
+    <div id="ops"></div>
+
+    <div id="cam" class="visible">
+      <video id="cam-video" playsinline muted></video>
+      <canvas id="cam-canvas"></canvas>
+      <div id="cam-hint"><span id="cam-hint-text">正在打开摄像头…</span></div>
+    </div>
+
+    <div id="boot">
+      <div class="spinner"></div>
+      <h1>麦浪精灵</h1>
+      <p id="boot-msg">正在唤醒这片麦田…</p>
+      <button id="boot-fallback" hidden>以鼠标模式继续</button>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
