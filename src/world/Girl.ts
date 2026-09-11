@@ -313,6 +313,28 @@ export class Girl {
     this.onArrive = undefined
   }
 
+  /** 重构/调试时将角色恢复到原点和默认运动状态。 */
+  reset(): void {
+    this.pos.copy(NEST)
+    this.vel.set(0, 0, 0)
+    this.target.copy(NEST)
+    this.accel.set(0, 0, 0)
+    this.group.position.set(0, 0, 0)
+    this.group.rotation.y = 0
+    this.figure.position.y = 0
+    this.figure.rotation.x = 0
+    this.facing = 0
+    this.lastFacing = 0
+    this.clearAutoPath()
+    this.paused = false
+    this.sailing = false
+    this.groundY = 0
+    this.curGroundY = 0
+    this.hopT = -1
+    this.hopLift = 0
+    this.bobLift = 0
+  }
+
   /** 光圈已按需求移除；warmth 微调裙子色调，intensity 参数保留接口一致性 */
   setAppearance(warmth: number, _intensity: number): void {
     this.dressMat.color.copy(this.dressCold).lerp(this.dressWarm, warmth)

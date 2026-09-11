@@ -22,10 +22,7 @@ export class OpsPanel {
       <div class="ops-card">
         <div class="ops-title">手 势</div>
         <div class="ops-row"><b>移动手掌</b> —— 指引小满</div>
-        <div class="ops-row"><b>快速挥动</b> —— 拨动麦浪</div>
-        <div class="ops-row"><b>张开手掌</b> —— 起风</div>
-        <div class="ops-row"><b>捏合手指</b> —— 摘花</div>
-        <div class="ops-mouse">鼠标模式：移动 = 手掌 · 按住左键 = 捏合<br>快速划动 = 起风</div>
+        <div class="ops-mouse">鼠标模式：移动鼠标 = 移动手掌</div>
       </div>
       <button class="ops-badge" title="展开 / 收起手势说明（H）" aria-label="展开手势说明">
         <span class="ops-badge-dot"></span>

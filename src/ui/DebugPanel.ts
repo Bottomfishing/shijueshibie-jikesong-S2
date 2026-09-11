@@ -15,7 +15,6 @@ export class DebugPanel {
 
   private readonly stats = {
     fps: 0,
-    act: 1 as number,
     input: '手部',
     pointer: '—',
     traveled: 0,
@@ -28,7 +27,6 @@ export class DebugPanel {
     // ── 状态 ─────────────────────────────────────────────
     const fStatus = this.gui.addFolder('状态')
     fStatus.add(this.stats, 'fps').name('帧率').listen().disable()
-    fStatus.add(this.stats, 'act').name('当前幕').listen().disable()
     fStatus.add(this.stats, 'input').name('输入源').listen().disable()
     fStatus.add(this.stats, 'traveled').name('累计移动').listen().disable()
     fStatus.add(this.stats, 'pointer').name('指针位置').listen().disable()
@@ -86,17 +84,6 @@ export class DebugPanel {
       })
       .catch(() => {})
 
-    // ── 麦浪 ─────────────────────────────────────────────
-    const fWheat = this.gui.addFolder('麦浪')
-    fWheat.add(CONFIG.wheat, 'windStrength', 0, 0.6, 0.01).name('风力')
-    fWheat.add(CONFIG.wheat, 'windDirection', 0, Math.PI * 2, 0.02).name('风向（弧度）')
-    fWheat.add(CONFIG.wheat, 'swayScale', 0, 1.5, 0.01).name('摆动幅度')
-    fWheat.add(CONFIG.wheat, 'gustStrength', 0, 1, 0.01).name('阵风对比（0=均匀风）')
-    fWheat.add(CONFIG.wheat, 'gustScale', 0.02, 0.3, 0.005).name('风斑大小（小=斑大）')
-    fWheat.add(CONFIG.wheat, 'gustSpeed', 0, 8, 0.1).name('阵风推进速度')
-    fWheat.add(CONFIG.wheat, 'handRadius', 0.5, 8, 0.1).name('手影响半径')
-    fWheat.close()
-
     // ── 主角 ─────────────────────────────────────────────
     const fGirl = this.gui.addFolder('小满（主角）')
     fGirl.add(CONFIG.girl, 'scale', 0.8, 2.2, 0.01).name('整体大小')
@@ -110,27 +97,11 @@ export class DebugPanel {
     fGirl.add(CONFIG.girl, 'turnLerp', 2, 16, 0.5).name('转身利落度')
     fGirl.close()
 
-    // ── 导演 ─────────────────────────────────────────────
-    const fStory = this.gui.addFolder('三幕流程')
-    fStory.add({ to: () => this.app.jumpTo(1) }, 'to').name('跳到 · 第一幕 静止')
-    fStory.add({ to: () => this.app.jumpTo(2) }, 'to').name('跳到 · 第二幕 唤醒')
-    fStory.add({ to: () => this.app.jumpTo(3) }, 'to').name('跳到 · 第三幕 共生')
-    fStory.add({ go: () => this.app.resetStory() }, 'go').name('重置整个体验')
-    fStory.add(CONFIG.story, 'act1Timeout', 5, 60, 1).name('一幕超时（防冷场）')
-    fStory.add(CONFIG.flowers, 'attractRadius', 0.5, 6, 0.1).name('花朵苏醒半径')
-
-    // ── 后期 ─────────────────────────────────────────────
-    const fPost = this.gui.addFolder('后期')
-    fPost.add(CONFIG.bloom, 'enabled').name('启用 Bloom')
-    fPost.add(CONFIG.bloom, 'strength', 0, 1.5, 0.01).name('Bloom 强度')
-    fPost.add(CONFIG.bloom, 'radius', 0, 1.2, 0.01).name('Bloom 半径')
-    fPost.add(CONFIG.bloom, 'threshold', 0, 1, 0.01).name('Bloom 阈值')
-    fPost.close()
+    this.gui.add({ reset: () => this.app.resetCharacter() }, 'reset').name('重置小满位置')
   }
 
   updateStats(fps: number, pointer: PointerState): void {
     this.stats.fps = Math.round(fps)
-    this.stats.act = this.app.director.act
     this.stats.input = this.app.router.activeKind === 'hand' ? '手部' : '鼠标'
     this.stats.traveled = Math.round(this.app.router.state.traveled * 10) / 10
     this.stats.pointer = pointer.active
