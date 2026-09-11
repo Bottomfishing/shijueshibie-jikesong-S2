@@ -21,17 +21,20 @@
         cursor: none;
       }
 
-      /* 本地手形光标：参考 Clarity Project 的 MIT 手形图标方向，避免依赖外部资源。 */
+      /* 本地手形光标：参考 Clarity Project 的 MIT 手形图标方向，避免依赖外部资源。
+         位置由 JS 写 left/top（自身 lerp 平滑），transform 只做旋转/缩放，
+         这样 .pressed 的按压动画不会被内联样式覆盖。 */
       .hand-cursor {
         position: fixed;
-        left: 0;
-        top: 0;
+        left: 50vw;
+        top: 50vh;
         z-index: 30;
         width: 76px;
         height: 76px;
         pointer-events: none;
         opacity: 0;
-        transform: translate3d(-50%, -50%, 0) rotate(-12deg) scale(0.84);
+        --stroke-angle: 0deg;
+        transform: rotate(calc(-12deg + var(--stroke-angle))) scale(0.84);
         transform-origin: 50% 58%;
         transition: opacity 0.22s ease, transform 0.22s cubic-bezier(.22,1,.36,1);
         filter: drop-shadow(0 8px 13px rgba(91, 61, 36, 0.18));
@@ -50,8 +53,13 @@
       .hand-cursor svg { position: relative; width: 100%; height: 100%; overflow: visible; }
       .hand-cursor .hand-fill { fill: #fff8e9; stroke: #8d5b3a; stroke-width: 2.3; stroke-linejoin: round; }
       .hand-cursor .hand-warm { fill: #ffd27c; opacity: 0.42; }
-      .hand-cursor.pressed { transform: translate3d(-50%, -50%, 0) rotate(-4deg) scale(0.72); }
+      .hand-cursor.pressed { transform: rotate(calc(-4deg + var(--stroke-angle))) scale(0.72); }
       .hand-cursor.pressed::before { transform: scale(1.1); opacity: 0.8; }
+      .hand-cursor.stroking svg { animation: strokePalm 0.42s ease-in-out infinite alternate; }
+      @keyframes strokePalm {
+        from { transform: translateY(0) rotate(-2deg); }
+        to { transform: translateY(3px) rotate(3deg); }
+      }
       @media (pointer: coarse) {
         body { cursor: auto; }
         .hand-cursor { display: none; }
