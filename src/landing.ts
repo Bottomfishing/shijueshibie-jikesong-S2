@@ -45,7 +45,7 @@ if (handCursor && matchMedia('(pointer: fine)').matches) {
     strokeSpeed = Math.min(1, distance / 24)
     if (pressed && activePointerId === event.pointerId && distance > 0) {
       strokeDistance += distance
-      const angle = Math.max(-12, Math.min(12, dx * 0.45))
+      const angle = Math.max(-10, Math.min(10, dx * 0.32))
       handCursor.style.setProperty('--stroke-angle', `${angle}deg`)
       handCursor.classList.add('stroking')
       window.dispatchEvent(
