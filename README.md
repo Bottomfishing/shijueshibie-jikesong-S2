@@ -7,6 +7,10 @@
 
 ## 快速开始
 
+Windows 用户可以直接双击项目根目录的 **`start-dev.bat`**。脚本会在首次运行时安装依赖，随后启动开发服务器并自动打开浏览器。
+
+也可以在终端中手动启动：
+
 ```bash
 npm install        # postinstall 会自动把 MediaPipe 模型和 wasm 落到 public/
 npm run dev        # 打开 http://localhost:5173
