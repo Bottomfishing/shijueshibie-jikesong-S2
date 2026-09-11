@@ -55,3 +55,26 @@ export interface PointerSource {
   sample(now: number): RawPointer
   dispose(): void
 }
+
+/**
+ * 导演层输出的世界意图，供世界层消费。
+ *
+ * 流程条件判断集中在 StoryDirector，世界对象只负责表现和局部运动。
+ * 这样三人协作时：A 改流程不动世界，B 改视觉不动流程，职责清晰。
+ */
+export interface WorldIntent {
+  /** 当前阶段 */
+  phase: 'dormant' | 'awakening' | 'bonded' | 'journey' | 'windRise' | 'finale'
+  /** 色调冷暖 0..1（0=冷灰，1=暖金） */
+  warmth: number
+  /** 风力倍率（基准值在 CONFIG.wheat.windStrength） */
+  windStrength: number
+  /** 交互响应增益 0..1（手部对麦浪的影响倍率） */
+  interactionGain: number
+  /** 镜头模式 */
+  cameraMode: 'overview' | 'follow' | 'sea'
+  /** 北方麦海开放度 0..1（0=完全封闭，1=完全打开） */
+  northOpen: number
+  /** 最终演出进度 0..1 */
+  finaleProgress: number
+}
