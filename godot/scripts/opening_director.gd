@@ -158,6 +158,14 @@ func update(delta: float) -> bool:
 			world.loading_bar.size.x = 400 * clampf(elapsed / 1.8, 0, 1)
 			if elapsed >= 1.8:
 				world.archive_root.visible = true
+				if world.meme_room != null:
+					world.meme_room.visible = false
+				if world.archive_interaction != null:
+					world.archive_interaction.set_active(true)
+				if world.archive_npc != null:
+					world.archive_npc.set_active(true)
+				if world.archive_arcade != null:
+					world.archive_arcade.set_active(true)
 				for child in world.get_children():
 					if child is StaticBody3D and child.has_meta("archive_collision"):
 						child.process_mode = Node.PROCESS_MODE_INHERIT

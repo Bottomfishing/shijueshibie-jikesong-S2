@@ -16,14 +16,17 @@
 
 [sub_resource type="Environment" id="Environment_272bh"]
 background_mode = 1
-background_color = Color(0.03137255, 0.050980393, 0.07450981, 1)
+background_color = Color(0.03, 0.008, 0.06, 1)
 ambient_light_source = 2
-ambient_light_color = Color(0.5529412, 0.6509804, 0.70980394, 1)
-ambient_light_energy = 0.48
+ambient_light_color = Color(0.42, 0.36, 0.72, 1)
+ambient_light_energy = 0.42
 glow_enabled = true
+glow_intensity = 1.1
+glow_strength = 1.08
+glow_bloom = 0.12
 fog_enabled = true
-fog_light_color = Color(0.14901961, 0.20392157, 0.23137255, 1)
-fog_light_energy = 0.28
+fog_light_color = Color(0.2, 0.08, 0.3, 1)
+fog_light_energy = 0.32
 fog_density = 0.008
 fog_height = 1.0
 fog_height_density = 0.025
@@ -42,8 +45,8 @@ environment = SubResource("Environment_272bh")
 
 [node name="Moonlight" type="DirectionalLight3D" parent="." unique_id=2059164775]
 transform = Transform3D(0.81915206, 0.4262504, -0.38379753, 0, 0.66913056, 0.74314487, 0.57357645, -0.6087487, 0.54811966, 0, 0, 0)
-light_color = Color(0.5568628, 0.67058825, 0.72156864, 1)
-light_energy = 0.85
+light_color = Color(0.5, 0.42, 0.86, 1)
+light_energy = 0.6
 shadow_enabled = true
 
 [node name="PresentDayGallery" parent="." instance=ExtResource("scene_intro_space")]

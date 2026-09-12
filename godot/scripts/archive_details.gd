@@ -75,12 +75,17 @@ static func label(root: Node3D, text: String, position: Vector3, size: int, colo
 	root.add_child(node)
 
 static func build(root: Node3D) -> void:
-	var steel := metal(Color("5b6b70"))
-	var rust := metal(Color("785e49"))
-	var black := surface(Color("161e25"))
-	var paper := surface(Color("a69c7c"))
-	var cyan := surface(Color("89c7cb"), 1.8)
-	var amber := surface(Color("dca55e"), 1.5)
+	var steel := metal(Color("292142"))
+	var rust := metal(Color("5c1752"))
+	var black := surface(Color("090513"))
+	var paper := surface(Color("d1dcf5"))
+	var cyan := surface(Color("26ebff"), 2.4)
+	var amber := surface(Color("ff852e"), 1.8)
+	var fx_root := Node3D.new(); fx_root.name = "ArchiveAtmosphere"; root.add_child(fx_root)
+	# Fine dust catches the existing pendant beams without obscuring the play route.
+	var dust := GPUParticles3D.new(); dust.name = "ArchiveDust"; dust.amount = 260; dust.lifetime = 9.0; dust.visibility_aabb = AABB(Vector3(-5, 1, -3.8), Vector3(42, 9, 7.6))
+	var dust_mesh := QuadMesh.new(); dust_mesh.size = Vector2(.022, .022); var dust_mat := StandardMaterial3D.new(); dust_mat.albedo_color = Color(0.7, .62, .98, .18); dust_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA; dust_mesh.material = dust_mat; dust.draw_pass_1 = dust_mesh
+	var dust_process := ParticleProcessMaterial.new(); dust_process.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX; dust_process.emission_box_extents = Vector3(20, 4, 3.2); dust_process.direction = Vector3(0, .18, 0); dust_process.spread = 28; dust_process.initial_velocity_min = .03; dust_process.initial_velocity_max = .16; dust_process.gravity = Vector3(0, -.012, 0); dust.process_material = dust_process; dust.position = Vector3(16, 1.5, -1.2); fx_root.add_child(dust)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 20162026
 
@@ -92,11 +97,12 @@ static func build(root: Node3D) -> void:
 		for j in range(4):
 			block(root, "DrainSlot", Vector3(x + j * 0.18, 0.02, -2.0), Vector3(0.08, 0.016, 0.4), black)
 
-	var dates := ["2016", "2018", "2020", "2022", "2024", "2026"]
-	var categories := ["论坛回帖", "循环影像", "直播回声", "热搜残片", "复制与再创作", "未命名记忆"]
-	for i in range(6):
-		var x := -1.0 + i * 6.2
-		var cabinet := root.get_node("ServerCabinet_%02d" % i)
+	var dates := ["2016", "2020", "2024"]
+	var categories := ["论坛回帖", "直播回声", "复制与再创作"]
+	var cabinet_names := ["ServerCabinet_00", "ServerCabinet_02", "ServerCabinet_04"]
+	for i in range(3):
+		var x := -1.0 + i * 12.4
+		var cabinet := root.get_node(cabinet_names[i])
 		(cabinet.get_node("Body") as MeshInstance3D).material_override = steel
 		block(root, "ArchivePlaque", Vector3(x, 6.05, -2.53), Vector3(3.3, 0.74, 0.12), black)
 		label(root, dates[i] + "  /  " + categories[i], Vector3(x, 6.05, -2.44), 38, Color("c5c7ab"))
@@ -118,7 +124,7 @@ static func build(root: Node3D) -> void:
 			var scrap := block(root, "DiscardedIndex", Vector3(x + rng.randf_range(-2, 2), 0.027, rng.randf_range(-1.4, 1.1)), Vector3(0.22, 0.007, 0.32), paper)
 			scrap.rotation.y = rng.randf_range(-PI, PI)
 
-	# 四盏实体吊灯，冷光照路、暖光在中后段接力。最多四盏投影灯。
+	# 四盏实体吊灯，霓虹品红与电子青在走廊上交替接力。最多四盏投影灯。
 	for i in range(4):
 		var x := -2.5 + i * 12.0
 		var warm := i == 2 or i == 3
@@ -129,7 +135,7 @@ static func build(root: Node3D) -> void:
 		light.name = "RouteLight_%d" % i
 		light.position = Vector3(x, 6.05, 0.1)
 		light.rotation_degrees.x = -90
-		light.light_color = Color("ffca8b") if warm else Color("b0dce3")
+		light.light_color = Color("ff52d1") if warm else Color("66ebff")
 		light.light_energy = 3.5
 		light.spot_range = 12
 		light.spot_angle = 52
@@ -140,14 +146,107 @@ static func build(root: Node3D) -> void:
 	var screen_light := OmniLight3D.new()
 	screen_light.name = "ScreenSpill"
 	screen_light.position = Vector3(14, 4.2, -1.6)
-	screen_light.light_color = Color("7ebac6")
+	screen_light.light_color = Color("59d9ff")
 	screen_light.light_energy = 2.0
 	screen_light.omni_range = 8.0
 	root.add_child(screen_light)
-	label(root, "缓存不可用\n最后访问：很久以前", Vector3(14, 6.3, -2.08), 48, Color("accfce"))
-	label(root, "记忆回收出口  →", Vector3(35.7, 5.95, -2.7), 42, Color("f3d4a4"))
+	label(root, "缓存不可用\n最后访问：很久以前", Vector3(14, 6.3, -2.08), 48, Color("8cf2ff"))
+	label(root, "记忆回收出口  →", Vector3(35.7, 5.95, -2.7), 42, Color("ffae66"))
 
 	# 顶部横梁只框住画面，不在玩家行走高度遮挡。
 	for i in range(5):
 		var x := -5.0 + i * 10
 		block(root, "OverheadGirder", Vector3(x, 9.3, 0), Vector3(0.24, 0.65, 7.6), rust)
+	# Broken foreground frames create a three-layer composition while leaving the floor route clear.
+	for x in [-3.2, 8.5, 22.0, 31.0]:
+		var frame := block(root, "ForegroundFrame", Vector3(x, 5.0, 3.2), Vector3(.22, 7.2, .5), black)
+		frame.rotation.z = sin(x) * .035
+	# A cold shaft at the archive screen and a warmer pool at the exit separate depth zones.
+	var shaft := SpotLight3D.new(); shaft.name = "ArchiveScreenShaft"; shaft.position = Vector3(14, 10.5, 2.0); shaft.rotation_degrees = Vector3(-55, 0, 0); shaft.light_color = Color("64d8ff"); shaft.light_energy = 4.0; shaft.spot_range = 14; shaft.spot_angle = 32; shaft.shadow_enabled = true; root.add_child(shaft)
+	var exit_fill := OmniLight3D.new(); exit_fill.name = "ExitWarmPool"; exit_fill.position = Vector3(35.0, 2.5, 0.0); exit_fill.light_color = Color("ff8033"); exit_fill.light_energy = 1.5; exit_fill.omni_range = 7.0; root.add_child(exit_fill)
+
+static func build_fx(root: Node3D) -> void:
+	if root.has_node("FX"):
+		return
+	var fx := Node3D.new()
+	fx.name = "FX"
+	root.add_child(fx)
+	var dust := GPUParticles3D.new()
+	dust.name = "ArchiveDust"
+	dust.amount = 360
+	dust.lifetime = 10.0
+	dust.preprocess = 10.0
+	dust.position = Vector3(16, 3.8, -0.8)
+	# The AABB is relative to the emitter, not archive coordinates.
+	dust.visibility_aabb = AABB(Vector3(-22, -4.5, -4), Vector3(44, 10, 8))
+	var quad := QuadMesh.new()
+	quad.size = Vector2(0.045, 0.045)
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color(0.68, 0.62, 1.0, 0.48)
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.no_depth_test = false
+	var gradient := Gradient.new()
+	gradient.set_color(0, Color.WHITE)
+	gradient.set_color(1, Color(1, 1, 1, 0))
+	var texture := GradientTexture2D.new()
+	texture.gradient = gradient
+	texture.fill = GradientTexture2D.FILL_RADIAL
+	texture.fill_from = Vector2(0.5, 0.5)
+	texture.fill_to = Vector2(1, 0.5)
+	texture.width = 32
+	texture.height = 32
+	material.albedo_texture = texture
+	quad.material = material
+	dust.draw_pass_1 = quad
+	var process := ParticleProcessMaterial.new()
+	process.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+	process.emission_box_extents = Vector3(20.5, 3.8, 2.5)
+	process.direction = Vector3(0.15, 0.2, 0)
+	process.spread = 32
+	process.initial_velocity_min = 0.025
+	process.initial_velocity_max = 0.11
+	process.gravity = Vector3(0, -0.006, 0)
+	process.scale_min = 0.4
+	process.scale_max = 1.3
+	dust.process_material = process
+	fx.add_child(dust)
+	var shaft := SpotLight3D.new()
+	shaft.name = "ArchiveScreenShaft"
+	shaft.position = Vector3(14, 9.2, 2)
+	shaft.rotation_degrees = Vector3(-65, 0, 0)
+	shaft.light_color = Color("64d8ff")
+	shaft.light_energy = 3.2
+	shaft.spot_range = 14
+	shaft.spot_angle = 26
+	shaft.shadow_enabled = true
+	fx.add_child(shaft)
+	# Compatibility renderer has no volumetric fog. A faint soft cone gives
+	# the lit airborne dust a visible volume without a full-screen fog effect.
+	var cone := MeshInstance3D.new()
+	cone.name = "VisibleShaft"
+	cone.position.z = -4.5
+	cone.rotation.x = PI / 2.0
+	cone.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var cone_mesh := CylinderMesh.new()
+	cone_mesh.top_radius = 0.07
+	cone_mesh.bottom_radius = 2.7
+	cone_mesh.height = 9.0
+	cone_mesh.radial_segments = 32
+	cone_mesh.cap_top = false
+	cone_mesh.cap_bottom = false
+	cone.mesh = cone_mesh
+	var shader := Shader.new()
+	shader.code = "shader_type spatial; render_mode unshaded, blend_add, depth_draw_never, cull_disabled; uniform float strength = 0.034; void fragment() { float edge = pow(abs(dot(normalize(NORMAL), normalize(VIEW))), 2.0); float fade = smoothstep(0.0, 0.12, UV.y) * (1.0 - smoothstep(0.55, 1.0, UV.y)); ALBEDO = vec3(0.44, 0.62, 0.98); ALPHA = edge * fade * strength; }"
+	var cone_material := ShaderMaterial.new()
+	cone_material.shader = shader
+	cone.material_override = cone_material
+	shaft.add_child(cone)
+	var pool := OmniLight3D.new()
+	pool.name = "ExitWarmPool"
+	pool.position = Vector3(35, 2.5, 0)
+	pool.light_color = Color("ff8033")
+	pool.light_energy = 0.9
+	pool.omni_range = 7
+	fx.add_child(pool)

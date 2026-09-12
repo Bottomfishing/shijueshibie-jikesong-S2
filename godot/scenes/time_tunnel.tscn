@@ -1,5 +1,7 @@
 [gd_scene format=3]
 
+[ext_resource type="Script" path="res://scripts/tunnel_detail.gd" id="detail_tunnel"]
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_r4no2"]
 transparency = 1
 albedo_color = Color(0.09992157, 0.1417255, 0.14784314, 0.26)
@@ -4214,6 +4216,7 @@ size = Vector3(0.7, 0.025, 0.02)
 
 [node name="TimeTunnel" type="Node3D" unique_id=958026039]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 100, 0, 0)
+script = ExtResource("detail_tunnel")
 
 [node name="MemoryWindow_000" type="Node3D" parent="." unique_id=1998002953 groups=["tunnel_fragments"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.128911, 0.09265582, -49)
