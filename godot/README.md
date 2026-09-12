@@ -1,0 +1,15 @@
+# 奶蛙：遗忘档案馆
+
+Godot 4 场景原型。使用程序化几何搭建废弃网络档案馆，通过横向电影镜头、巨大工业设施、前景遮挡和冷暖光对比形成阴森童话氛围。
+
+运行：用 Godot 打开本目录的 `project.godot`，按 F6/F5；或执行：
+
+```powershell
+& 'C:\Users\72417\AppData\Local\Programs\Godot\Godot_v4.7.2-stable_win64.exe' --path .
+```
+
+操作：A/D 左右移动，W/S 向场景深处/近处移动，也支持方向键；空格跳跃。斜向移动不会加速，前后活动限制在柜前通道内。
+
+场景光照：四盏带阴影的冷暖吊灯、故障屏幕青色补光、暖色出口光及主角弱补光。档案柜包含 2016—2026 年代标牌、索引卡、把手、磨损材质和散落档案。细节集中在 `scripts/archive_details.gd`。
+
+渲染检查：Godot 加 `--script res://scripts/check_archive.gd -- --capture` 可输出入口、中段、出口截图到 Godot 用户数据目录。
