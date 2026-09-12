@@ -421,6 +421,16 @@ export class HandPointerSource implements PointerSource {
     this.startBlackFrameWatch()
   }
 
+  /**
+   * 运行时应用新的推理分辨率（CONFIG.pointer.inferWidth/Height）。
+   * 分辨率只在打开摄像头时读取，调试面板改完必须重开流才生效——这里就是这个"重开"。
+   */
+  async applyResolution(): Promise<void> {
+    if (!this.stream) return
+    await this.reopenStream(CONFIG.pointer.inferWidth, CONFIG.pointer.inferHeight)
+    this.startBlackFrameWatch()
+  }
+
   /** 按 delegate 后端（重新）创建手部识别器 */
   private async rebuildLandmarker(delegate: 'GPU' | 'CPU'): Promise<void> {
     if (!this.vision) throw new Error('wasm 运行时未初始化')
