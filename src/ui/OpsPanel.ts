@@ -21,7 +21,7 @@ export class OpsPanel {
     el.innerHTML = `
       <div class="ops-card">
         <div class="ops-title">手 势</div>
-        <div class="ops-row"><b>移动手掌</b> —— 指引小满</div>
+        <div class="ops-row"><b>移动手掌</b> —— 指引奶蛙</div>
         <div class="ops-mouse">鼠标模式：移动鼠标 = 移动手掌</div>
       </div>
       <button class="ops-badge" title="展开 / 收起手势说明（H）" aria-label="展开手势说明">

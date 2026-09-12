@@ -18,6 +18,12 @@
       }
       #app { position: fixed; inset: 0; }
       #app canvas { display: block; width: 100%; height: 100%; }
+      #transition-loading { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(8,12,24,.82); opacity: 0; pointer-events: none; transition: opacity .35s; z-index: 10; }
+      #transition-loading.visible { opacity: 1; }
+      #transition-loading .loading-box { width: min(360px, 70vw); color: #e8f0ff; text-align: center; letter-spacing: .25em; font-size: 13px; }
+      #transition-loading .bar { height: 3px; margin-top: 18px; background: rgba(255,255,255,.18); overflow: hidden; }
+      #transition-loading .bar i { display: block; width: 35%; height: 100%; background: #8de4ff; animation: loading 1.4s ease-in-out infinite; }
+      @keyframes loading { 0% { transform: translateX(-120%); } 100% { transform: translateX(320%); } }
 
       /* 旁白提示：底部胶囊，主文案 + 操作副文案 */
       #hint {
@@ -210,6 +216,7 @@
   </head>
   <body>
     <div id="app"></div>
+    <div id="transition-loading"><div class="loading-box">LOADING<div class="bar"><i></i></div></div></div>
 
     <!-- 场景内提示：旁白式短句，随剧情淡入淡出 -->
     <div id="hint"></div>
@@ -217,7 +224,7 @@
     <!-- 左侧常驻操作表：当前可用的一切手势 -->
     <div id="ops"></div>
 
-    <div id="cam" class="visible">
+    <div id="cam">
       <video id="cam-video" playsinline muted></video>
       <canvas id="cam-canvas"></canvas>
       <div id="cam-hint"><span id="cam-hint-text">正在打开摄像头…</span></div>

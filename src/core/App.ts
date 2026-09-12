@@ -10,6 +10,8 @@ import { DebugPanel } from '../ui/DebugPanel'
 import { HintLayer } from '../ui/HintLayer'
 import { OpsPanel } from '../ui/OpsPanel'
 import { Girl } from '../world/Girl'
+import { EraSpace } from '../world/EraSpace'
+import { StoryDirector } from '../director/StoryDirector'
 
 /**
  * 重构阶段的最小运行基线。
@@ -26,6 +28,8 @@ export class App {
   private readonly camera: THREE.OrthographicCamera
   private readonly composer: EffectComposer
   private readonly girl = new Girl()
+  private readonly eraSpace = new EraSpace()
+  private readonly director = new StoryDirector()
   private readonly clock = new THREE.Clock()
   private readonly handSource: HandPointerSource
   private readonly mouseSource: MousePointerSource
@@ -47,9 +51,9 @@ export class App {
     this.renderer.setSize(window.innerWidth, window.innerHeight)
     container.appendChild(this.renderer.domElement)
 
-    // 重构期使用更近的镜头，让小人成为画面中唯一明确主体。
+    // 展厅需要读出完整空间关系，使用更远的正交镜头。
     const aspect = window.innerWidth / window.innerHeight
-    const frustum = 8
+    const frustum = 18
     this.camera = new THREE.OrthographicCamera(
       (-frustum * aspect) / 2,
       (frustum * aspect) / 2,
@@ -62,6 +66,7 @@ export class App {
     this.camera.lookAt(0, 0.45, 0)
 
     this.scene.background = new THREE.Color('#f5efe0')
+    this.scene.add(this.eraSpace.group)
     this.scene.add(this.girl.group)
     this.girl.setState('bonded')
     this.girl.setAppearance(1, 1)
@@ -99,7 +104,7 @@ export class App {
     this.started = true
     this.clock.start()
     this.hints.show(
-      this.router.activeKind === 'mouse' ? '移动鼠标，引导小满行走' : '移动手掌，引导小满行走',
+      this.router.activeKind === 'mouse' ? '移动鼠标，引导奶蛙穿越网络' : '移动手掌，引导奶蛙穿越网络',
       undefined,
       5000,
     )
@@ -121,6 +126,8 @@ export class App {
   resetCharacter(): void {
     this.girl.reset()
     this.router.resetTravel()
+    this.director.reset()
+    this.eraSpace.setPhase('intro')
   }
 
   private readonly loop = (): void => {
@@ -131,7 +138,12 @@ export class App {
     const time = this.clock.elapsedTime
     const pointer = this.router.update(dt, performance.now())
 
-    this.girl.setState('bonded')
+    const next = this.director.update(dt, pointer)
+    if (next) this.eraSpace.setPhase(next)
+    document.getElementById('transition-loading')?.classList.toggle('visible', this.director.phase === 'pullIn' || this.director.phase === 'tunnel')
+    this.eraSpace.update(dt, time, pointer)
+
+    this.girl.setState(this.director.phase === 'intro' ? 'dormant' : 'bonded')
     this.girl.setAppearance(1, 1)
     this.girl.setScale(CONFIG.girl.scale)
     this.girl.update(dt, time, pointer)
@@ -146,7 +158,7 @@ export class App {
     const width = window.innerWidth
     const height = window.innerHeight
     const aspect = width / height
-    const frustum = 8
+    const frustum = 18
     this.camera.left = (-frustum * aspect) / 2
     this.camera.right = (frustum * aspect) / 2
     this.camera.top = frustum / 2
@@ -173,6 +185,7 @@ export class App {
     window.removeEventListener('keydown', this.onKey)
     this.router.dispose()
     this.girl.dispose()
+    this.eraSpace.dispose()
     this.composer.dispose()
     this.renderer.dispose()
   }
