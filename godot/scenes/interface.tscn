@@ -30,6 +30,7 @@ mouse_filter = 2
 color = Color(0.02, 0.04, 0.08, 0)
 
 [node name="LoadingLabel" type="Label" parent="TransitionOverlay" unique_id=1333645983]
+visible = false
 modulate = Color(0.7, 0.9, 0.92, 0)
 layout_mode = 0
 offset_left = 458.0
@@ -40,6 +41,7 @@ theme_override_font_sizes/font_size = 18
 text = "LOADING  INTERNET  MEMORY"
 
 [node name="LoadingTrack" type="ColorRect" parent="TransitionOverlay" unique_id=1864814182]
+visible = false
 layout_mode = 0
 offset_left = 440.0
 offset_top = 356.0
@@ -48,6 +50,7 @@ offset_bottom = 360.0
 color = Color(0.25, 0.35, 0.4, 0.45)
 
 [node name="LoadingBar" type="ColorRect" parent="TransitionOverlay" unique_id=2060034855]
+visible = false
 layout_mode = 0
 offset_left = 440.0
 offset_top = 356.0

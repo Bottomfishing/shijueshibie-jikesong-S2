@@ -64,8 +64,18 @@ export class DebugPanel {
       )
       .name('应用滤波参数')
 
-    fInput.add(CONFIG.pointer, 'inferWidth', [320, 480, 640, 960, 1280]).name('推理分辨率宽')
-    fInput.add(CONFIG.pointer, 'inferHeight', [240, 360, 480, 720]).name('推理分辨率高')
+    // 推理分辨率：改完自动重开摄像头生效（防抖合并宽/高连续两次修改，只重开一次）
+    const applySize = (() => {
+      let timer = 0
+      return () => {
+        window.clearTimeout(timer)
+        timer = window.setTimeout(() => {
+          void this.app.applyInferSize().catch((e) => console.error('[wisp-field] 应用推理分辨率失败：', e))
+        }, 400)
+      }
+    })()
+    fInput.add(CONFIG.pointer, 'inferWidth', [320, 480, 640, 960, 1280]).name('推理分辨率宽').onChange(applySize)
+    fInput.add(CONFIG.pointer, 'inferHeight', [240, 360, 480, 720]).name('推理分辨率高').onChange(applySize)
 
     // ── 摄像头：笔记本常有多个设备（IR/虚拟摄像头），黑框时在这里手动换 ──
     const fCam = this.gui.addFolder('摄像头')
@@ -92,8 +102,6 @@ export class DebugPanel {
     fGirl.add(CONFIG.girl, 'dampingRatio', 0.6, 1.2, 0.01).name('阻尼（<1 会过冲）')
     fGirl.add(CONFIG.girl, 'wanderAmp', 0, 6, 0.1).name('漫步范围')
     fGirl.add(CONFIG.girl, 'curiosityAmp', 0, 4, 0.05).name('好奇幅度')
-    fGirl.add(CONFIG.girl, 'curiosityMin', 1, 12, 0.5).name('好奇间隔下限（秒）')
-    fGirl.add(CONFIG.girl, 'curiosityMax', 1, 12, 0.5).name('好奇间隔上限（秒）')
     fGirl.add(CONFIG.girl, 'turnLerp', 2, 16, 0.5).name('转身利落度')
     fGirl.close()
 

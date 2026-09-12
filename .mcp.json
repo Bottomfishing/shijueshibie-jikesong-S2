@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "godot": {
+      "type": "stdio",
+      "command": "python",
+      "args": [
+        "scripts/godot_mcp_bridge.py"
+      ],
+      "env": {}
+    }
+  }
+}

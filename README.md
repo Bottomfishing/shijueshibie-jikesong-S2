@@ -7,7 +7,7 @@
 
 ## 快速开始
 
-Windows 用户可以直接双击项目根目录的 **`start-dev.bat`** 启动网页端，或双击 **`start-desktop.bat`** 启动桌面端。两个入口使用同一份 `src/` 代码和同一套资源。
+Windows 用户可以直接双击项目根目录的 **`启动网页端.bat`** 启动网页端，或双击 **`启动桌面端.bat`** 启动桌面端。两个入口使用同一份 `src/` 代码和同一套资源。
 
 也可以在终端中手动启动：
 
@@ -45,37 +45,42 @@ npm run dev:desktop # Electron 桌面端开发
 ## 代码结构（按数据流向读）
 
 ```
+index.html                 进入页：晨光 + 「进入」按钮，点按钮/Enter 跳转体验页
+app.html                   体验页：boot 启动层 + 摄像头预览 + 场景容器
 src/
-├── main.ts                 启动流程：加载模型 → 摄像头（失败自动降级鼠标）→ 进场
-├── config.ts               全部可调参数。现场调参就是在改这个文件
-├── types.ts                PointerSource / PointerState 接口
+├── landing.ts             进入页脚本：跳转（相对路径，file:// 打包也成立）+ 手形光标
+├── main.ts                体验页启动流程：加载模型 → 摄像头（失败自动降级鼠标）→ 进场
+├── config.ts              全部可调参数。现场调参就是在改这个文件
+├── types.ts               PointerSource / PointerState 接口
 ├── core/
-│   └── App.ts              装配 + 主循环。每帧顺序：指针→光点→导演→世界→渲染
-├── input/                  输入层
+│   └── App.ts             装配 + 主循环。重构基线：场景只装载小满（Girl）
+├── input/                 输入层
 │   ├── HandPointerSource   MediaPipe Hand Landmarker（本地模型，21 关键点/手）
 │   ├── MousePointerSource  鼠标/触摸兜底。现场摄像头挂了就靠它
 │   ├── PointerRouter       滤波 + 屏幕坐标→世界坐标 + 速度/能量派生 + 源切换
 │   └── OneEuroFilter       抖动滤波。慢时强平滑、快时跟手，比低通好得多
-├── world/                  世界
-│   ├── WheatField          麦浪：InstancedBufferGeometry + 顶点着色器，一次 draw call
-│   ├── Spirit              精灵：弹簧阻尼(欠阻尼) + 自主噪声 + 好奇行为
-│   ├── Motes               光点：无文字教学的关键——靠近→吸引→收集
-│   └── Environment         地面/远景石碑/雾。纪念碑谷语言：纯色块+雾化分层
+├── world/                 世界对象
+│   ├── Girl               小满：弹簧阻尼移动 + 走路/眨眼/披风动画（当前唯一接线的模块）
+│   └── WheatField/Environment/SeaSurface/Pier/Boat/Crows/Flowers/Pollen
+│                          保留源码、暂不实例化，按新流程逐个接回
 ├── director/
-│   └── StoryDirector       三幕状态机：静止→唤醒→共生。参数全部时间平滑，绝不跳变
+│   └── StoryDirector      三幕状态机：静止→唤醒→共生（重构期未接线）
 ├── shaders/
-│   ├── wheat.vert/frag     手部世界坐标作 uniform，距离平方衰减倒伏 + 行波风
-│   └── halo.vert/frag      菲涅尔外发光（精灵和光点共用）
+│   ├── wheat.vert/frag    麦浪着色器（重构期未接回）
+│   └── halo.vert/frag     菲涅尔外发光（重构期未接回）
 └── ui/
-    └── DebugPanel          lil-gui 调试面板，改参数即时生效
+    ├── DebugPanel         lil-gui 调试面板，改参数即时生效（D 键开关）
+    ├── HintLayer          场景内旁白提示
+    └── OpsPanel           左下角手势说明徽标（H 键展开）
 ```
 
 ## 现场开发时最可能动的地方
 
-1. **`config.ts`** —— 所有手感参数（风力、手影响半径、精灵弹簧、光点吸引距离）
-2. **`config.ts` → colors** —— 色调整个在 `wheat.colors` 里，配合调试面板实时看
-3. **`StoryDirector.ts` → PROFILES** —— 每一幕的"世界状态"参数
-4. **`wheat.vert.glsl`** —— 想让麦浪形态更好看就改弯曲曲线 `pow(t, 1.65)` 和衰减系数
+1. **`config.ts`** —— 小满手感参数（弹簧、步速、好奇幅度），调试面板可实时拧
+2. **`config.ts` → pointer** —— 手感预设（跟手/平衡/稳定）与推理分辨率
+3. **`Girl.ts`** —— 角色动画细节；接回场景时 `WheatField/Flowers` 等从这里开始接线
+
+> 注意：`wheat/sea/bloom/story` 等 CONFIG 分区当前未被运行时消费（场景未接回），改它们暂时看不到效果，属预期。
 
 ## 已知注意事项
 

@@ -123,6 +123,11 @@ export class App {
     return this.handSource.switchCamera(deviceId)
   }
 
+  /** 调试面板改推理分辨率后调用：重开摄像头使新分辨率生效 */
+  applyInferSize(): Promise<void> {
+    return this.handSource.applyResolution()
+  }
+
   resetCharacter(): void {
     this.girl.reset()
     this.router.resetTravel()

@@ -7,7 +7,10 @@ extends Node3D
 @onready var loading_bar: ColorRect = $Interface/TransitionOverlay/LoadingBar
 @onready var archive_root: Node3D = $ArchiveArchitecture
 @onready var opening: Node = $StoryDirector
-var target_camera_x := 2.0
+@onready var visual_recognition: Node = $VisualRecognition
+@onready var input_state: Node = $InputState
+@onready var camera_director: Node = $CameraDirector
+@onready var arrival_portal: Node3D = $ArrivalPortal
 var story_phase := 0
 var phase_time := 0.0
 var skeleton: Skeleton3D
@@ -24,19 +27,23 @@ var destination_id := ""
 var destination_active := false
 var destination_elapsed := 0.0
 var in_destination := false
-var camera_yaw := 0.0
-var camera_pitch := -0.18
 
 func _ready() -> void:
 	archive_root.visible = false
-	var login := preload("res://scripts/login_ui.gd").new()
-	add_child(login)
-	login.accepted.connect(func(): opening.enter("sleep"))
-	opening.phase = "login"
+	# 传送门只在开场抵达段出现；旧加载界面的节点保留用于兼容旧场景，
+	# 但从启动开始就明确隐藏，避免任何转场闪白时误显示进度条。
+	arrival_portal.visible = false
+	$Interface/TransitionOverlay/LoadingLabel.visible = false
+	$Interface/TransitionOverlay/LoadingTrack.visible = false
+	$Interface/TransitionOverlay/LoadingBar.visible = false
+	camera_director.set_follow_bounds(0.0, 31.5)
+	# 没有登录界面：开机是世界里的一个物理动作，由 BootTerminal 承担。
+	opening.phase = "idle"
 	opening.setup(self)
 	skeleton = frog_visual.find_child("MilkFrog_Skeleton", true, false) as Skeleton3D
 	if skeleton == null:
 		skeleton = frog_visual.find_child("Armature", true, false) as Skeleton3D
+	# 档案走廊玩法栈：三段记忆交互、氛围 FX、柜前 NPC、霓虹海报与三台街机。
 	meme_room = null
 	archive_interaction = preload("res://scripts/archive_interaction.gd").new()
 	archive_interaction.name = "ArchiveInteraction"
@@ -63,17 +70,6 @@ func _ready() -> void:
 	archive_arcade.set_active(false)
 	archive_arcade.game_started.connect(_on_arcade_started)
 	archive_arcade.game_closed.connect(_on_arcade_closed)
-	var flashlight := SpotLight3D.new()
-	flashlight.name = "Flashlight"
-	flashlight.position = Vector3(0, 1.05, 0.28)
-	flashlight.light_color = Color("b9dff0")
-	flashlight.light_energy = 1.2
-	flashlight.spot_range = 6.0
-	flashlight.spot_angle = 30.0
-	flashlight.shadow_enabled = true
-	frog_visual.add_child(flashlight)
-	# The redesigned room is the playable set; the old archive remains as an editable reference only.
-	archive_root.visible = false
 
 func _physics_process(delta: float) -> void:
 	if arcade_active:
@@ -84,13 +80,14 @@ func _physics_process(delta: float) -> void:
 		else:
 			_update_destination_room(delta)
 		return
+	# InputState 先于剧情推进，保证两侧读到同一帧输入。
+	input_state.poll(delta)
+	camera_director.process_shake(delta)
 	if opening.update(delta):
 		return
 	phase_time += delta
-	var direction := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
-	var view_basis := Basis(Vector3.UP, camera_yaw)
-	var move3 := view_basis * Vector3(direction.x, 0, direction.y)
-	direction = Vector2(move3.x, move3.z)
+	# 移动方向已由 InputState 归一化：键鼠优先，视觉识别兜底。
+	var direction: Vector2 = input_state.axis
 	var sprinting := Input.is_key_pressed(KEY_SHIFT)
 	var crawling := Input.is_key_pressed(KEY_CTRL)
 	var speed := direction.length()
@@ -103,12 +100,12 @@ func _physics_process(delta: float) -> void:
 	player.velocity.z = horizontal_velocity.y
 	if not player.is_on_floor():
 		player.velocity.y -= 18.0 * delta
-	elif Input.is_action_just_pressed("jump"):
+	elif Input.is_action_just_pressed("jump") or input_state.confirm_just_pressed:
 		player.velocity.y = 6.4
 	player.move_and_slide()
-	player.position.x = clamp(player.position.x, -5.0 if not in_destination else 194.0, 37.0 if not in_destination else 206.0)
+	player.position.x = clamp(player.position.x, -5.0, 37.0)
 	# 留出角色半径，保持在柜前通道及地面碰撞范围内。
-	player.position.z = clampf(player.position.z, -1.9 if not in_destination else -4.4, 1.9 if not in_destination else 4.4)
+	player.position.z = clampf(player.position.z, -1.9, 1.9)
 	if (player.position.z <= -1.9 and player.velocity.z < 0.0) or (player.position.z >= 1.9 and player.velocity.z > 0.0):
 		player.velocity.z = 0.0
 	frog_visual.rotation.z = lerp(frog_visual.rotation.z, -direction.x * 0.08, delta * 8.0)
@@ -119,18 +116,9 @@ func _physics_process(delta: float) -> void:
 	frog_visual.position.y = sin(Time.get_ticks_msec() * 0.012) * min(horizontal_velocity.length() / 4.0, 1.0) * 0.05
 	apply_locomotion_pose()
 
-	# 镜头缓慢追随并略微滞后，避免机械贴身。
-	var focus := player.global_position + Vector3(0, 1.1, 0)
-	var camera_offset := Vector3(sin(camera_yaw) * 8.5, 4.3 + camera_pitch * 3.0, cos(camera_yaw) * 8.5)
-	camera.global_position = camera.global_position.lerp(focus + camera_offset, delta * 4.0)
-	camera.look_at(focus, Vector3.UP)
-
-func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-		camera_yaw -= event.relative.x * 0.004
-		camera_pitch = clamp(camera_pitch - event.relative.y * 0.003, -0.55, 0.28)
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT:
-		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if event.pressed else Input.MOUSE_MODE_VISIBLE
+	# 镜头交给 CameraDirector：滞后跟随 + 统一震屏叠加。
+	camera_director.set_follow_bounds(0.0 if story_phase < 2 else 2.0, 31.5)
+	camera_director.follow(delta, player.position)
 
 func _on_npc_dialogue_started(_id: String) -> void:
 	if archive_interaction:
@@ -171,6 +159,7 @@ func _on_memory_portal_entered(id: String) -> void:
 	tunnel_overlay.color = Color(0.08, 0.04, 0.15, 0.0)
 	loading_bar.visible = false
 	tunnel_overlay.get_node("LoadingLabel").text = "记忆通道：" + id
+	tunnel_overlay.get_node("LoadingLabel").visible = true
 	tunnel_overlay.get_node("LoadingLabel").modulate.a = 1.0
 
 func _update_memory_tunnel(delta: float) -> void:
@@ -191,6 +180,7 @@ func _update_memory_tunnel(delta: float) -> void:
 		in_destination = true
 		tunnel.visible = false
 		tunnel_overlay.visible = false
+		tunnel_overlay.get_node("LoadingLabel").visible = false
 		destination_root = preload("res://scripts/memory_destination.gd").new()
 		destination_root.name = "MemoryDestination_" + destination_id
 		destination_root.position = Vector3(200, 0, 0)
@@ -223,7 +213,7 @@ func _update_destination_room(delta: float) -> void:
 		if Input.is_action_just_pressed("interact"):
 			destination_root.set_completed()
 	elif local_pos.distance_to(destination_root.return_position) < 2.4:
-		cue.text = "E 返回废弃档案馆"
+		cue.text = "E 返回档案长廊"
 		if Input.is_action_just_pressed("interact"):
 			_return_from_destination()
 	else:
