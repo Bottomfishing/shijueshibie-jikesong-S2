@@ -16,12 +16,17 @@ const SFX_SPLIT := preload("res://assets/audio/split.wav")
 const SFX_MOTHER := preload("res://assets/audio/voice_mother.wav")
 const SFX_CHILD := preload("res://assets/audio/voice_child.wav")
 const SFX_GAGA := preload("res://assets/audio/voice_gaga.wav")
+## 留下的那只奶蛙换成安迪的实录。两句各 1.21s，比合成的 child 长。
+const SFX_ANDY := preload("res://assets/audio/voice_andy.wav")
+const SFX_ANDY_2 := preload("res://assets/audio/voice_andy_2.wav")
 const SFX_HOP := preload("res://assets/audio/hop_away.wav")
 const SFX_LAUGH := preload("res://assets/audio/laugh.wav")
 
 ## 说话人 -> 音源。gaga 也是妈妈的嗓子，只是换了实录素材那句。
 const VOICES := {
 	"child": SFX_CHILD,
+	"andy": SFX_ANDY,
+	"andy_2": SFX_ANDY_2,
 	"mother": SFX_MOTHER,
 	"gaga": SFX_GAGA,
 }
@@ -38,15 +43,18 @@ const ABANDON_TIME := 1.5
 const BEAT_TIME := 0.45
 const LAUGH_TIME := 2.2
 
-## 对话节拍：[说话人, 起始时刻]。child 追问、mother 敷衍，一问一答四轮。
-## 最后一句用 gaga（1.33s 实录），比合成的 mother 长，所以 BANTER_TIME 留够尾巴。
+## 对话节拍：[说话人, 起始时刻]。奶蛙追问、妈妈敷衍，一问一答四轮。
+## 留下的那只奶蛙由安迪的实录出声（andy / andy_2），妈妈仍是 mother + gaga 实录。
+## 尾句给 andy：追问悬在那儿没人答，妈妈直接跳走，紧接着就是捧腹大笑。
+## 只有一个 _voice，后一句会掐掉前一句，所以每句都排在上一句播完之后：
+## mother 0.15+0.85 → andy_2 1.10+1.21 → gaga 2.40+1.33 → andy 3.85+1.21 = 5.06
 const BANTER := [
-	["child", 0.15],
-	["mother", 1.05],
-	["child", 1.85],
-	["gaga", 2.65],
+	["mother", 0.15],
+	["andy_2", 1.10],
+	["gaga", 2.40],
+	["andy", 3.85],
 ]
-const BANTER_TIME := 4.15
+const BANTER_TIME := 5.20
 
 var stage := "idle"
 var stage_time := 0.0
