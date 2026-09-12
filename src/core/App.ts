@@ -123,6 +123,11 @@ export class App {
     return this.handSource.applyResolution()
   }
 
+  /** 调试面板拧“整体大小”时调用，立即缩放小满 */
+  setGirlScale(s: number): void {
+    this.girl.setScale(s)
+  }
+
   resetCharacter(): void {
     this.girl.reset()
     this.router.resetTravel()
@@ -136,9 +141,7 @@ export class App {
     const time = this.clock.elapsedTime
     const pointer = this.router.update(dt, performance.now())
 
-    this.girl.setState('bonded')
-    this.girl.setAppearance(1, 1)
-    this.girl.setScale(CONFIG.girl.scale)
+    // 状态/外观/缩放已在构造时定好；接回 StoryDirector 后由它按幕驱动，不再每帧硬编码
     this.girl.update(dt, time, pointer)
 
     const fps = dt > 0 ? 1 / dt : 0

@@ -1,6 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/title_card.gd" id="title_card"]
 [ext_resource type="Script" path="res://scripts/opening_director.gd" id="3_lquwl"]
 [ext_resource type="AudioStream" path="res://assets/audio/gallery.wav" id="4_7mycd"]
 
@@ -97,6 +98,9 @@ script = ExtResource("camera_director")
 
 [node name="VisionPreview" type="CanvasLayer" parent="."]
 script = ExtResource("vision_preview")
+
+[node name="TitleCard" type="CanvasLayer" parent="."]
+script = ExtResource("title_card")
 
 [node name="Ambience" type="AudioStreamPlayer" parent="StoryDirector" unique_id=2061284989]
 stream = ExtResource("4_7mycd")

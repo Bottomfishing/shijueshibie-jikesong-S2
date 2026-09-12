@@ -12,6 +12,8 @@ import type { App } from '../core/App'
  */
 export class DebugPanel {
   private readonly gui: GUI
+  /** 面板隐藏时跳过 updateStats 的每帧字符串拼接与赋值（lil-gui 的 listen 依然活着，但那是它的固有开销） */
+  private panelVisible = true
 
   private readonly stats = {
     fps: 0,
@@ -96,7 +98,8 @@ export class DebugPanel {
 
     // ── 主角 ─────────────────────────────────────────────
     const fGirl = this.gui.addFolder('小满（主角）')
-    fGirl.add(CONFIG.girl, 'scale', 0.8, 2.2, 0.01).name('整体大小')
+    // scale 不再每帧回灌：拧动时才应用到角色（App.loop 里对应的每帧调用已移除）
+    fGirl.add(CONFIG.girl, 'scale', 0.8, 2.2, 0.01).name('整体大小').onChange((v: number) => this.app.setGirlScale(v))
     fGirl.add(CONFIG.girl, 'maxSpeed', 2, 8, 0.1).name('步速上限')
     fGirl.add(CONFIG.girl, 'stiffness', 6, 60, 1).name('步伐弹性')
     fGirl.add(CONFIG.girl, 'dampingRatio', 0.6, 1.2, 0.01).name('阻尼（<1 会过冲）')
@@ -109,6 +112,7 @@ export class DebugPanel {
   }
 
   updateStats(fps: number, pointer: PointerState): void {
+    if (!this.panelVisible) return
     this.stats.fps = Math.round(fps)
     this.stats.input = this.app.router.activeKind === 'hand' ? '手部' : '鼠标'
     this.stats.traveled = Math.round(this.app.router.state.traveled * 10) / 10
@@ -119,8 +123,8 @@ export class DebugPanel {
   }
 
   toggleVisible(): void {
-    const el = this.gui.domElement
-    el.style.display = el.style.display === 'none' ? '' : 'none'
+    this.panelVisible = !this.panelVisible
+    this.gui.domElement.style.display = this.panelVisible ? '' : 'none'
   }
 
   get domElement(): HTMLElement {

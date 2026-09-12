@@ -15,19 +15,26 @@ const BRIDGE_SCRIPT := "res://../scripts/mediapipe_camera_bridge.py"
 var socket := PacketPeerUDP.new()
 var observation: Dictionary = {
 	"active": false, "x": 0.5, "y": 0.5, "grab": 0.0,
-	"spread": 0.5, "confidence": 0.0, "source": "fallback"
+	"spread": 0.5, "confidence": 0.0, "source": "fallback",
+	"bridge_online": false, "face_detected": false,
+	"smile": 0.0, "laugh": false
 }
 var last_packet_at := -100.0
+var last_aux_at := -100.0
 var enabled := true
 var bridge_pid := -1
+var bridge_status := "正在启动摄像头桥接…"
+var bridge_error := ""
 
 func _ready() -> void:
 	# 自动化检查/CI 不应绑定桌面视觉端口，也不应启动摄像头进程。
-	if OS.has_feature("headless"):
+	if OS.has_feature("headless") or DisplayServer.get_name() == "headless":
 		set_process(false)
 		return
 	var err := socket.bind(LISTEN_PORT, "127.0.0.1")
 	if err != OK:
+		bridge_error = "UDP 端口 %d 被占用" % LISTEN_PORT
+		bridge_status = bridge_error
 		push_warning("视觉识别 UDP 端口 %d 不可用，使用鼠标模拟模式；不会重复启动桥接进程" % LISTEN_PORT)
 		return
 	_start_bridge()
@@ -36,10 +43,18 @@ func _start_bridge() -> void:
 	var script_path := ProjectSettings.globalize_path(BRIDGE_SCRIPT)
 	var venv_python := ProjectSettings.globalize_path("res://../.vision-venv/Scripts/python.exe")
 	if not FileAccess.file_exists(script_path) or not FileAccess.file_exists(venv_python):
+		bridge_error = "未找到 MediaPipe Python 环境"
+		bridge_status = bridge_error
 		push_warning("未找到 MediaPipe 环境，使用鼠标模式。可运行启动脚本创建环境。")
 		return
-	bridge_pid = OS.create_process(venv_python, [script_path], false)
+	bridge_pid = OS.create_process(venv_python, [
+		script_path,
+		"--device", "0",
+		"--parent-pid", str(OS.get_process_id()),
+	], false)
 	if bridge_pid <= 0:
+		bridge_error = "MediaPipe 桥接进程启动失败"
+		bridge_status = bridge_error
 		push_warning("MediaPipe 桥接启动失败，使用鼠标模式")
 
 func _exit_tree() -> void:
@@ -53,6 +68,9 @@ func _exit_tree() -> void:
 	socket.close()
 
 func _process(_delta: float) -> void:
+	if bridge_pid > 0 and not OS.is_process_running(bridge_pid) and last_packet_at < 0.0:
+		bridge_error = "摄像头桥接已退出，请检查摄像头是否被其他程序占用"
+		bridge_status = bridge_error
 	var got_packet := false
 	while socket.get_available_packet_count() > 0:
 		var text := socket.get_packet().get_string_from_utf8()
@@ -67,8 +85,21 @@ func _process(_delta: float) -> void:
 	observation_changed.emit(observation)
 
 func _accept_packet(data: Dictionary) -> bool:
+	if data.has("bridge_status"):
+		bridge_status = String(data.get("bridge_status", ""))
+		observation["bridge_online"] = bool(data.get("bridge_online", false))
+		observation["face_detected"] = bool(data.get("face_detected", false))
+		observation["smile"] = clampf(float(data.get("smile", 0.0)), 0.0, 1.0)
+		observation["laugh"] = bool(data.get("laugh", false))
+		last_aux_at = Time.get_ticks_msec() / 1000.0
+		if not bool(observation["bridge_online"]):
+			bridge_error = bridge_status
+		else:
+			bridge_error = ""
 	var confidence := clampf(float(data.get("confidence", 1.0)), 0.0, 1.0)
-	if confidence < 0.2:
+	# 没有手时 confidence=0，但桥接仍会携带摄像头/笑脸状态；这类帧不能丢，
+	# 否则右下角预览和“请笑一笑”提示会在无手帧期间停住。
+	if confidence < 0.2 and not data.has("bridge_status"):
 		return false
 	observation["active"] = bool(data.get("active", true))
 	observation["x"] = clampf(float(data.get("x", 0.5)), 0.0, 1.0)
@@ -79,6 +110,11 @@ func _accept_packet(data: Dictionary) -> bool:
 	return true
 
 func _update_fallback() -> void:
+	if Time.get_ticks_msec() / 1000.0 - last_aux_at > 0.75:
+		observation["bridge_online"] = false
+		observation["face_detected"] = false
+		observation["smile"] = 0.0
+		observation["laugh"] = false
 	var viewport := get_viewport()
 	var size := viewport.get_visible_rect().size
 	var mouse := viewport.get_mouse_position()

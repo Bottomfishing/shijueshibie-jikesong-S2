@@ -19,7 +19,7 @@ const ARRIVAL_PORTAL_POSITION := Vector3(-4.5, 2.25, -0.15)
 const ARRIVAL_HOLD := 0.14
 const ARRIVAL_FALL_TIME := 1.05
 ## 分裂桥段自带固定时长（约 9s），这里再加一道硬上限防卡。
-const MITOSIS_TIMEOUT := 12.0
+const MITOSIS_TIMEOUT := 24.0
 const MITOSIS_ACT := preload("res://scripts/mitosis_act.gd")
 
 var world: Node3D
@@ -50,6 +50,7 @@ var ambience: AudioStreamPlayer
 var effect: AudioStreamPlayer
 var grabbed := false
 var landed := false
+var laugh_feedback_sent := false
 
 func pose(blink: float, reach: float) -> void:
 	for mesh in morph_meshes:
@@ -87,6 +88,11 @@ func setup(owner_world: Node3D) -> void:
 			fragments.append(child)
 	cue = world.get_node("Interface/StoryCue")
 	cue.text = ""
+	cue.position = Vector2(0, 566)
+	cue.size = Vector2(1280, 82)
+	cue.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	cue.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	cue.add_theme_font_size_override("font_size", 22)
 	terminal = gallery.get_node("BootTerminal")
 	# 分裂桥段挂在展厅下，随展厅一起隐去。
 	mitosis = MITOSIS_ACT.new()
@@ -113,6 +119,7 @@ func enter(next: String) -> void:
 			sound("signal")
 		"mitosis":
 			# 奶蛙就在机箱顶上分裂，分身从同一点弹出。
+			laugh_feedback_sent = false
 			mitosis.begin(world.player.position)
 		"pull": sound("pull")
 		"tunnel": sound("tunnel")
@@ -177,8 +184,16 @@ func update(delta: float) -> bool:
 			if terminal.is_complete():
 				enter("mitosis")
 		"mitosis":
-			# 分裂桥段：本体只驱动主角，分身的表演在 mitosis_act 里。
+				# 分裂桥段：本体只驱动主角，分身的表演在 mitosis_act 里。
 			mitosis.advance(delta)
+			if mitosis.has_method("laugh_prompt_active") and mitosis.laugh_prompt_active():
+				# 视觉识别笑脸达到阈值并保持 0.65 秒才会放行；
+				# 摄像头不可用时仍允许点击/空格作为明确的兜底动作。
+				var fallback_laugh: bool = not input_state.vision_online and (clicked or Input.is_action_just_pressed("jump"))
+				mitosis.set_laugh_input(input_state.smile, input_state.face_detected, fallback_laugh)
+				_update_laugh_prompt()
+			elif mitosis.stage == "laugh":
+				_update_laugh_success()
 			_drive_mitosis_body(delta, body)
 			_mitosis_camera()
 			if mitosis.is_complete() or elapsed > MITOSIS_TIMEOUT:
@@ -390,6 +405,12 @@ func _drive_mitosis_body(delta: float, body: Node3D) -> void:
 			# 喜剧停顿：一动不动地盯着妈妈消失的方向。
 			body.scale = body.scale.lerp(Vector3.ONE, delta * 3.0)
 			pose(0.0, 0.0)
+		"laugh_prompt":
+			# 先憋笑：嘴角微抬、身体轻轻前倾，等待用户给出笑脸。
+			var progress: float = mitosis.laugh_progress()
+			body.scale = body.scale.lerp(Vector3(1.0 + progress * 0.06, 1.0 - progress * 0.04, 1.0 + progress * 0.06), delta * 6.0)
+			body.rotation.x = lerpf(body.rotation.x, -0.08 - progress * 0.08, delta * 5.0)
+			pose(0.0, progress * 0.35)
 		"laugh":
 			# 捧腹大笑：闭眼、后仰、按笑声节奏抽动。
 			var amount: float = mitosis.laugh_amount()
@@ -417,7 +438,7 @@ func _mitosis_camera() -> void:
 				Vector3(focus.x, 1.7, -0.3),
 				54.0
 			)
-		"beat", "laugh":
+		"beat", "laugh_prompt", "laugh":
 			camera_director.apply_cinematic(
 				Vector3(-2.6, 2.95, 3.7),
 				Vector3(-3.5, 2.35, -0.3),
@@ -436,4 +457,31 @@ func flash(amount: float) -> void:
 	world.tunnel_overlay.get_node("LoadingLabel").modulate.a = 0
 	world.loading_bar.visible = false
 	world.loading_bar.get_parent().get_node("LoadingTrack").visible = false
+
+func _update_laugh_prompt() -> void:
+	if cue == null:
+		return
+	var progress: float = mitosis.laugh_progress()
+	if not input_state.vision_online:
+		cue.text = "请对着摄像头大笑\n摄像头未连接时：点击鼠标或按空格继续"
+	elif not input_state.face_detected:
+		cue.text = "请看向右下角摄像头\n让奶蛙看见你的笑脸"
+	elif input_state.smile < 0.58:
+		cue.text = "请对着摄像头大笑\n笑容强度  %d%%" % int(input_state.smile * 100.0)
+	else:
+		cue.text = "检测到笑脸！保持一下……  %d%%" % int(progress * 100.0)
+	cue.visible = true
+	cue.modulate.a = 1.0
+
+func _update_laugh_success() -> void:
+	if not laugh_feedback_sent:
+		laugh_feedback_sent = true
+		camera_director.add_shake(0.34 if mitosis.laugh_triggered_by_user else 0.16)
+	if cue == null:
+		return
+	if mitosis.stage_time < 0.85:
+		cue.text = "笑容同步成功！" if mitosis.laugh_triggered_by_user else "奶娃没忍住，先笑了出来"
+		cue.visible = true
+	else:
+		cue.text = ""
 

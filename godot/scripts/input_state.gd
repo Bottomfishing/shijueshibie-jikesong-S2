@@ -22,6 +22,10 @@ var pointer := Vector2(0.5, 0.5)
 var grab := 0.0
 var spread := 0.5
 var confidence := 0.0
+var vision_online := false
+var face_detected := false
+var smile := 0.0
+var laugh_detected := false
 var confirm_pressed := false
 var confirm_just_pressed := false
 var confirm_just_released := false
@@ -49,6 +53,10 @@ func poll(delta: float) -> void:
 	grab = clampf(float(observation.get("grab", 0.0)), 0.0, 1.0)
 	spread = clampf(float(observation.get("spread", 0.5)), 0.0, 1.0)
 	confidence = clampf(float(observation.get("confidence", 0.0)), 0.0, 1.0)
+	vision_online = bool(observation.get("bridge_online", false))
+	face_detected = bool(observation.get("face_detected", false))
+	smile = clampf(float(observation.get("smile", 0.0)), 0.0, 1.0)
+	laugh_detected = bool(observation.get("laugh", false))
 
 	var raw_pointer := Vector2(
 		clampf(float(observation.get("x", 0.5)), 0.0, 1.0),
@@ -84,6 +92,10 @@ func reset() -> void:
 	axis = Vector2.ZERO
 	steer = Vector2.ZERO
 	pointer = Vector2(0.5, 0.5)
+	vision_online = false
+	face_detected = false
+	smile = 0.0
+	laugh_detected = false
 	confirm_pressed = false
 	confirm_just_pressed = false
 	confirm_just_released = false

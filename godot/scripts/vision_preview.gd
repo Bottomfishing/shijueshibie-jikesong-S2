@@ -10,10 +10,16 @@ var frame_socket := PacketPeerUDP.new()
 const FRAME_PORT := 6402
 var frame_parts: Dictionary = {}
 var last_frame_at := -100.0
+var frame_bind_error := ""
 
 func _ready() -> void:
+	if OS.has_feature("headless") or DisplayServer.get_name() == "headless":
+		set_process(false)
+		return
 	_preview_ui()
-	frame_socket.bind(FRAME_PORT, "127.0.0.1")
+	var frame_err := frame_socket.bind(FRAME_PORT, "127.0.0.1")
+	if frame_err != OK:
+		frame_bind_error = "画面端口 %d 被占用" % FRAME_PORT
 	_connect_camera()
 
 func _preview_ui() -> void:
@@ -84,8 +90,8 @@ func _connect_camera() -> void:
 	CameraServer.set_monitoring_feeds(true)
 	var count := CameraServer.get_feed_count()
 	if count <= 0:
-		status_label.text = "桌面版未接入 webcam · 鼠标模式"
-		placeholder.text = "\n                 ◉\n          Godot 暂不提供\n       Windows USB 摄像头采集"
+		status_label.text = "正在连接笔记本摄像头…"
+		placeholder.text = "\n                 ◉\n          等待摄像头桥接"
 		return
 	feed = CameraServer.get_feed(0)
 	if feed == null:
@@ -125,6 +131,7 @@ func _process(_delta: float) -> void:
 				preview.texture = ImageTexture.create_from_image(image)
 				placeholder.visible = false
 				status_label.text = "用户画面 · 摄像头桥接已连接"
+				last_frame_at = Time.get_ticks_msec() / 1000.0
 	if feed != null and preview != null:
 		var texture = feed.get_texture()
 		if texture != null and preview.texture != texture:
@@ -133,7 +140,15 @@ func _process(_delta: float) -> void:
 	if Time.get_ticks_msec() / 1000.0 - last_frame_at > 2.0 and feed == null:
 		status_label.text = "未收到画面 · 请运行摄像头桥接脚本"
 	var vision := get_parent().get_node_or_null("VisualRecognition")
-	if vision != null and last_frame_at > -10.0:
+	if vision != null:
 		var state: Dictionary = vision.get_observation()
-		if bool(state.get("active", false)) and String(state.get("source", "")) == "vision":
+		if frame_bind_error != "":
+			status_label.text = frame_bind_error
+		elif String(vision.bridge_error) != "":
+			status_label.text = String(vision.bridge_error)
+		elif bool(state.get("face_detected", false)) and float(state.get("smile", 0.0)) > 0.12:
+			status_label.text = "捕捉到笑容 · %d%%" % int(float(state.get("smile", 0.0)) * 100.0)
+		elif bool(state.get("active", false)) and String(state.get("source", "")) == "vision":
 			status_label.text = "用户画面 · 手部识别已检测"
+		elif String(vision.bridge_status) != "":
+			status_label.text = String(vision.bridge_status)
