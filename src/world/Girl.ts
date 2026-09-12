@@ -86,11 +86,11 @@ export class Girl {
   private bunSwing = 0
 
   constructor() {
-    const redMat = new THREE.MeshBasicMaterial({ color: new THREE.Color('#a8402f'), fog: true })
-    this.dressMat = new THREE.MeshBasicMaterial({ color: this.dressCold.clone(), fog: true })
-    const skinMat = new THREE.MeshBasicMaterial({ color: new THREE.Color('#f5c9a0'), fog: true })
-    const hairMat = new THREE.MeshBasicMaterial({ color: new THREE.Color('#5a4632'), fog: true })
-    const shoeMat = new THREE.MeshBasicMaterial({ color: new THREE.Color('#8f382a'), fog: true })
+    const redMat = new THREE.MeshBasicMaterial({ color: new THREE.Color('#78b84d'), fog: true })
+    this.dressMat = new THREE.MeshBasicMaterial({ color: new THREE.Color('#4f9b45'), fog: true })
+    const skinMat = new THREE.MeshBasicMaterial({ color: new THREE.Color('#a9d86b'), fog: true })
+    const hairMat = new THREE.MeshBasicMaterial({ color: new THREE.Color('#274a32'), fog: true })
+    const shoeMat = new THREE.MeshBasicMaterial({ color: new THREE.Color('#274a32'), fog: true })
     const eyeMat = new THREE.MeshBasicMaterial({ color: new THREE.Color('#4a3826'), fog: true })
 
     // ── 腿 ×2：真腿，交替摆 + 抬脚，红鞋点睛 ──
