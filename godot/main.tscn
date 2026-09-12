@@ -13,6 +13,11 @@
 [ext_resource type="PackedScene" path="res://scenes/time_tunnel.tscn" id="scene_time_tunnel"]
 
 [ext_resource type="PackedScene" path="res://scenes/interface.tscn" id="scene_interface"]
+[ext_resource type="Script" path="res://scripts/visual_recognition.gd" id="visual_recognition"]
+[ext_resource type="Script" path="res://scripts/vision_preview.gd" id="vision_preview"]
+[ext_resource type="Script" path="res://scripts/input_state.gd" id="input_state"]
+[ext_resource type="Script" path="res://scripts/camera_director.gd" id="camera_director"]
+[ext_resource type="Script" path="res://scripts/arrival_portal.gd" id="arrival_portal"]
 
 [sub_resource type="Environment" id="Environment_272bh"]
 background_mode = 1
@@ -56,6 +61,10 @@ shape = SubResource("BoxShape3D_4k2k6")
 
 [node name="ArchiveArchitecture" parent="." instance=ExtResource("scene_archive_space")]
 
+[node name="ArrivalPortal" type="Node3D" parent="."]
+visible = false
+script = ExtResource("arrival_portal")
+
 [node name="GroundCollision" type="StaticBody3D" parent="." unique_id=134358565]
 process_mode = 4
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17, -0.45, 0)
@@ -76,6 +85,18 @@ fov = 44.0
 
 [node name="StoryDirector" type="Node" parent="." unique_id=1194013018]
 script = ExtResource("3_lquwl")
+
+[node name="VisualRecognition" type="Node" parent="."]
+script = ExtResource("visual_recognition")
+
+[node name="InputState" type="Node" parent="."]
+script = ExtResource("input_state")
+
+[node name="CameraDirector" type="Node" parent="."]
+script = ExtResource("camera_director")
+
+[node name="VisionPreview" type="CanvasLayer" parent="."]
+script = ExtResource("vision_preview")
 
 [node name="Ambience" type="AudioStreamPlayer" parent="StoryDirector" unique_id=2061284989]
 stream = ExtResource("4_7mycd")

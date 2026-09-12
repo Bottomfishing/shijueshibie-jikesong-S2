@@ -5,6 +5,15 @@ dist/
 .workbuddy/
 tmp/
 
+# Python 虚拟环境与缓存（视觉识别桥接用，本地重建即可）
+.vision-venv/
+__pycache__/
+*.pyc
+
+# 本地调试产物
+camera_test.jpg
+nul
+
 *.log
 npm-debug.log*
 .DS_Store

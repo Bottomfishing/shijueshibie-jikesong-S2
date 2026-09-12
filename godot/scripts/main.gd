@@ -7,7 +7,10 @@ extends Node3D
 @onready var loading_bar: ColorRect = $Interface/TransitionOverlay/LoadingBar
 @onready var archive_root: Node3D = $ArchiveArchitecture
 @onready var opening: Node = $StoryDirector
-var target_camera_x := 2.0
+@onready var visual_recognition: Node = $VisualRecognition
+@onready var input_state: Node = $InputState
+@onready var camera_director: Node = $CameraDirector
+@onready var arrival_portal: Node3D = $ArrivalPortal
 var story_phase := 0
 var phase_time := 0.0
 var skeleton: Skeleton3D
@@ -16,20 +19,29 @@ var anim_time := 0.0
 
 func _ready() -> void:
 	archive_root.visible = false
-	var login := preload("res://scripts/login_ui.gd").new()
-	add_child(login)
-	login.accepted.connect(func(): opening.enter("sleep"))
-	opening.phase = "login"
+	# 传送门只在开场抵达段出现；旧加载界面的节点保留用于兼容旧场景，
+	# 但从启动开始就明确隐藏，避免任何转场闪白时误显示进度条。
+	arrival_portal.visible = false
+	$Interface/TransitionOverlay/LoadingLabel.visible = false
+	$Interface/TransitionOverlay/LoadingTrack.visible = false
+	$Interface/TransitionOverlay/LoadingBar.visible = false
+	camera_director.set_follow_bounds(0.0, 31.5)
+	# 没有登录界面：开机是世界里的一个物理动作，由 BootTerminal 承担。
+	opening.phase = "idle"
 	opening.setup(self)
 	skeleton = frog_visual.find_child("MilkFrog_Skeleton", true, false) as Skeleton3D
 	if skeleton == null:
 		skeleton = frog_visual.find_child("Armature", true, false) as Skeleton3D
 
 func _physics_process(delta: float) -> void:
+	# InputState 先于剧情推进，保证两侧读到同一帧输入。
+	input_state.poll(delta)
+	camera_director.process_shake(delta)
 	if opening.update(delta):
 		return
 	phase_time += delta
-	var direction := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
+	# 移动方向已由 InputState 归一化：键鼠优先，视觉识别兜底。
+	var direction: Vector2 = input_state.axis
 	var sprinting := Input.is_key_pressed(KEY_SHIFT)
 	var crawling := Input.is_key_pressed(KEY_CTRL)
 	var speed := direction.length()
@@ -42,7 +54,7 @@ func _physics_process(delta: float) -> void:
 	player.velocity.z = horizontal_velocity.y
 	if not player.is_on_floor():
 		player.velocity.y -= 18.0 * delta
-	elif Input.is_action_just_pressed("jump"):
+	elif Input.is_action_just_pressed("jump") or input_state.confirm_just_pressed:
 		player.velocity.y = 6.4
 	player.move_and_slide()
 	player.position.x = clamp(player.position.x, -5.0, 37.0)
@@ -58,10 +70,9 @@ func _physics_process(delta: float) -> void:
 	frog_visual.position.y = sin(Time.get_ticks_msec() * 0.012) * min(horizontal_velocity.length() / 4.0, 1.0) * 0.05
 	apply_locomotion_pose()
 
-	# 镜头缓慢追随并略微滞后，避免机械贴身。
-	target_camera_x = clamp(player.position.x + 4.0, 0.0 if story_phase < 2 else 2.0, 31.5)
-	camera.position.x = lerp(camera.position.x, target_camera_x, delta * 1.8)
-	camera.look_at(Vector3(camera.position.x, 3.0, 0), Vector3.UP)
+	# 镜头交给 CameraDirector：滞后跟随 + 统一震屏叠加。
+	camera_director.set_follow_bounds(0.0 if story_phase < 2 else 2.0, 31.5)
+	camera_director.follow(delta, player.position)
 
 func apply_locomotion_pose() -> void:
 	var moving := locomotion != "idle"
