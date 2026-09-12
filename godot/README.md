@@ -5,7 +5,7 @@ Godot 4 场景原型。使用程序化几何搭建废弃网络档案馆，通过
 运行：用 Godot 打开本目录的 `project.godot`，按 F6/F5；或执行：
 
 ```powershell
-& 'C:\Users\72417\AppData\Local\Programs\Godot\Godot_v4.7.2-stable_win64.exe' --path .
+godot --path .
 ```
 
 操作：A/D 左右移动，W/S 向场景深处/近处移动，也支持方向键；空格跳跃。斜向移动不会加速，前后活动限制在柜前通道内。
